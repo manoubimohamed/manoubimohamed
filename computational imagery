@@ -1,0 +1,108 @@
+
+%%%%%%%%%%%%%convolution blurring%%%%%%%%%%%%%
+
+close all,clear all,clc;
+pkg load image;
+F=imread('SheppLogan.jpg');
+figure,imagesc(F),
+F1=log(abs(fftshift(fft2(F))));
+figure,
+subplot(221),imagesc(F1);daspect([1,1,1]) ,title('trasf fourier centré'),
+colormap gray;
+
+masque = zeros(225,225);
+masque(112:115,112:115) = 1;
+Flou = masque.*F1;
+
+subplot(222),imagesc(Flou);daspect([1,1,1]) ,title('flou'),
+colormap gray;
+
+IFlou=abs(ifftshift(ifft2(Flou)));
+subplot(223),imagesc(IFlou);daspect([1,1,1]) ,title('inverser_flou'),
+colormap gray;
+
+
+
+
+
+%%%%%%%%%% inverse filter and wiener filter%%%%%%%%%%%%
+
+close all,clear all,clc;
+pkg load image;
+F=imread('SheppLogan.jpg');
+figure,
+subplot(231),imshow(F);daspect([1,1,1]) ,title('image original'),
+colormap gray;
+
+FF=(fftshift(fft2(F)));
+
+subplot(234),imshow(FF);daspect([1,1,1]) ,title('FFT2 image original'),
+
+
+[x,y]=size(F);
+
+sigma=10;
+
+masque = zeros(x,y);
+
+gauss=fspecial('gaussian',[3*sigma,3*sigma],sigma);
+masque(((x-(3*sigma))/2):((x+(3*sigma))/2-1 ), (y-(3*sigma))/2: ((y+(3*sigma))/2-1))=gauss;
+subplot(232),imagesc(masque);daspect([1,1,1]) ,title('Gaussian masque'),
+
+imasque=abs(fftshift(fft2(masque)));
+
+subplot(235),imagesc(imasque);daspect([1,1,1]) ,title('FFT2 gaussian masque'),
+##image flouté inversé
+
+iB1=imasque.*(FF)
+FF=fftshift(abs(ifft2(F)));
+
+%subplot(236),imagesc(iB1);daspect([1,1,1]) ,title('produit des deux TF'),
+
+##image flouté
+
+B1=real(fftconv2(F,masque,'same'));
+figure,
+imagesc(B1),title('image flouté'),
+
+##inverse wiener filter
+
+for i=1:10
+  k(i)=10.^(-i) ;
+iweiner=conj(imasque)./(abs(imasque).^2+k(i));
+filter=iweiner.*iB1;
+Bwiener=(abs(ifft2(filter)));
+figure,
+imagesc(Bwiener)
+endfor
+%%%%%%%%%%%%%%%%%%%%%%%%%RADON transformation with different projection degrees%%%%%%%%%%%%%%%%%%%%%%%
+
+close all,clear all,clc;
+pkg load image;
+
+I1=imread('SheppLogan.png');
+figure,
+[x,y]=size(I1)
+MASQ=zeros(228,228);
+masq(1:225,1:225)=I1;
+%imagesc(I1);daspect([1,1,1]) ,title(''),
+
+IR=radon(I1);
+##
+figure,
+
+gama=[];var=[];
+for i=1:10
+theta= 1:i:180;
+ir1 = radon(I1,theta);
+
+real=iradon(ir1);
+
+epsilon2(i)=sqrt(mean2((MASQ-real).^2));
+
+end
+figure,
+plot(epsilon2),xlabel('degrée d écart'),
+ylabel('e'),
+title(' figure 9:l écart quadratique moyen en fct de l ecart de angle du projection de radon ')
+
